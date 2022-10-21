@@ -1,0 +1,565 @@
+
+<!DOCTYPE html>
+<html>
+
+
+<head>
+<title> Visualizing snake </title>
+</head>
+
+
+<body>
+
+Upload game details file: <input type="file" name="inputfile"
+    id="inputfile">
+
+<br>
+
+<input type="text" id="myText" value="Game number">
+
+<div class="panel">
+<canvas id="canvas" width="1000" height="600" style="position:relative; top:50px; left:50px"></canvas>
+</div>
+
+<script>
+
+lines = []
+gameID = -1
+
+document.getElementById('inputfile')
+    .addEventListener('change', function() {
+        
+    var fr=new FileReader();
+    fr.onload=function(){
+        text = fr.result
+        lines = text.split("\n")
+    }
+        
+    fr.readAsText(this.files[0]);
+})
+
+
+var canvas = document.getElementById('canvas');
+var ctx = canvas.getContext('2d');
+ 
+boardx = 12;
+boardy = 12;
+cellS = 35;
+windx = 1000;
+windy = 600;
+marginx = (windx - boardx * cellS) / 2
+marginy = (windy - boardy * cellS) / 2
+border = 5
+snakeWidth = 20
+appleSize = 20
+textSize = 20
+
+framesPerMove = 7
+
+dir = [[0,1], [1,0], [0,-1], [-1,0]];
+
+pi = Math.PI;
+
+xSize = 5
+cHead = "fff"
+
+space = "#fff"
+cLine = "#000"
+cShade = "#eee"
+cSnake = "#00f"
+cApple = "#f00"
+cText = "#000"
+
+cValue = "#d00"
+cSearch = "#bb0"
+cNetwork = "#0d0"
+
+cPolicy = "#66d"
+cNetPolicy = "#f0f"
+
+TIME_LIMIT = 1200
+
+function randint(max){
+    return Math.floor(Math.random()*max)
+}
+
+class Environment{
+    constructor(){
+        this.timer = 0
+        this.score = 0;
+        this.actionType = 0;
+        this.snakeSize = 2;
+        this.headx = boardx/2;
+        this.heady = 2;
+        this.tailx = this.headx;
+        this.taily = 1;
+
+        this.snake = []
+        for(var i=0; i<boardx; i++){
+            this.snake[i] = []
+            for(var j=0; j<boardy; j++){
+                this.snake[i][j] = -1;
+            }
+        }
+        this.snake[this.headx][this.heady] = 4;
+        this.snake[this.tailx][this.taily] = 0;
+        this.applex = 0;
+        this.appley = 0;
+    }
+
+    agentAction(actionIndex){
+        this.timer ++
+        var newHeadx = this.headx + dir[actionIndex][0];
+        var newHeady = this.heady + dir[actionIndex][1];
+        this.snake[this.headx][this.heady] = actionIndex;
+        this.headx = newHeadx;
+        this.heady = newHeady;
+        this.snake[newHeadx][newHeady] = 4;
+
+        if(this.headx == this.applex && this.heady == this.appley){
+            this.score += 1;
+            //score += 1 - timer*0.5/maxTime;
+            this.snakeSize++;
+            this.actionType = 1;
+        }
+        else{
+            var tailDir = this.snake[this.tailx][this.taily];
+            this.snake[this.tailx][this.taily] = -1;
+            this.tailx += dir[tailDir][0];
+            this.taily += dir[tailDir][1];
+        }
+    }
+
+    chanceAction(actionIndex){
+        this.applex = Math.floor(actionIndex / boardy);
+        this.appley = actionIndex % boardy;
+        this.actionType = 0
+    }
+
+    validAgentAction(d){
+        var newHeadx = this.headx + dir[d][0];
+        var newHeady = this.heady + dir[d][1];
+        if(newHeadx == -1 || newHeadx == boardx){
+            return false;
+        }
+        if(newHeady == -1 || newHeady == boardy){
+            return false;
+        }
+        return this.snake[newHeadx][newHeady] == -1;
+    }
+
+    randomChanceAction(){
+        while(true){
+            this.applex = randint(boardx)
+            this.appley = randint(boardy)
+            if(this.snake[this.applex][this.appley] == -1){
+                break
+            }
+        }
+        this.actionType = 0
+    }
+}
+
+env = new Environment();
+
+actions        = []
+values         = []
+network_values = []
+search_values  = []
+network_policy = []
+search_policy  = []
+
+endState = false
+paused = true
+
+env = new Environment();
+env.snake = [
+    [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+    [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+    [-1,  1,  2,  2,  2,  2,  2,  2,  2,  2,  2, -1],
+    [-1,  0,  0,  4, -1,  0,  0,  0,  0,  1,  3, -1],
+    [-1,  1,  2,  1,  2,  2,  2,  2,  2,  2,  3, -1],
+    [-1,  1,  3,  0,  0,  0,  0,  0,  0,  1,  3, -1],
+    [-1,  1,  3,  1,  2,  2,  2,  2,  2,  2,  3, -1],
+    [-1,  1,  3,  0,  0,  0,  0,  0,  0,  1,  3, -1],
+    [-1,  1,  3,  1,  2,  2,  2,  2,  2,  2,  3, -1],
+    [-1,  1,  3,  0,  0,  0,  0,  0,  0,  1,  3, -1],
+    [-1,  1,  3,  2,  2,  2,  2,  2,  2,  2,  3, -1],
+    [-1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  3, -1]
+]
+env.tailx = 3
+env.taily = 5
+env.headx = 3
+env.heady = 3
+env.applex = 0
+env.appley = 0
+
+currAction = 0
+currActionIndex = 0
+tick = 0
+endState = false
+paused = true
+
+document.getElementById('myText')
+    .addEventListener('change', function() {
+        gameID = parseInt(this.value)
+        split_to_int = function(list){
+            spl = list.split(" ")
+            nums = []
+            for(i=0; i<spl.length; i++){
+                nums[i] = parseInt(spl[i])
+            }
+            return nums
+        }
+        split_to_float = function(list){
+            spl = list.split(" ")
+            nums = []
+            for(i=0; i<spl.length; i++){
+                nums[i] = parseFloat(spl[i])
+            }
+            return nums
+        }
+        split_to_2d_float = function(list){
+            spl = list.split(" ")
+            nums = []
+            for(i=0; i<spl.length; i++){
+                if(i%4 == 0){
+                    nums[Math.floor(i/4)] = []
+                }
+                nums[Math.floor(i/4)][i%4] = parseFloat(spl[i])
+            }
+            return nums
+        }
+        var numStarts = 0
+        var count = 0
+        //console.log(gameID)
+        while(numStarts != gameID){
+            //console.log([count, numStarts])
+            if(lines[count][0] == "G"){
+                numStarts += 1
+            }
+            count += 1
+        }
+        if(gameID == 0){
+            count = 1
+        }
+        actions        = split_to_int(lines[count])
+        values         = split_to_float(lines[count + 1])
+        network_values = split_to_float(lines[count + 2])
+        search_values  = split_to_float(lines[count + 3])
+        network_policy = split_to_2d_float(lines[count + 4])
+        search_policy  = split_to_2d_float(lines[count + 5])
+        //console.log(network_policy)
+
+        env = new Environment();
+        updateEnvironment(1)
+        currAction = actions[1]
+        currActionIndex = 2
+        tick = 0
+        endState = false
+        paused = true
+        /*
+        //Manual game:
+        currAction = 0
+        tick = -1
+        env.randomChanceAction()
+        */
+        //console.log(env)
+    })
+
+
+function updateEnvironment(index){
+    env = new Environment()
+    for(i=0; i<index; i++){
+        if(i == 0 || env.actionType == 1){
+            env.chanceAction(actions[i])
+        }
+        else{
+            env.agentAction(actions[i])
+        }
+        while(env.actionType == 0){
+            // Check if there is only one valid action
+            numValidActions = 0
+            validAction = -1
+            for(d = 0; d < 4; d++){
+                if(env.validAgentAction(d)){
+                    numValidActions++
+                    validAction = d
+                }
+            }
+            if(numValidActions == 1){
+                env.agentAction(validAction)
+            }
+            else{
+                break
+            }
+        }
+    }
+}
+
+
+
+
+
+function fillRect(color,sx,sy,l,w){
+    ctx.fillStyle = color;
+    ctx.fillRect(sx,sy,l,w);
+}
+
+function drawLine(color,p1x,p1y,p2x,p2y, width){
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.beginPath();
+    ctx.moveTo(p1x,p1y);
+    ctx.lineTo(p2x,p2y);
+    ctx.stroke();
+}
+
+function fillCirc(color,x,y,r){
+    ctx.beginPath();
+    ctx.arc(x,y,r,0,2*pi);
+    ctx.fillStyle = color;
+    ctx.fill();
+}
+
+function fillText(text,color,size,x,y){
+    ctx.font = String(size)+"px Arial";
+    ctx.fillStyle = color;
+    ctx.textAlign = "center";
+    ctx.fillText(text,x,y);
+}
+
+document.addEventListener("keydown",keyHandler);
+document.addEventListener("click",clickHandler);
+
+keyMove = ["ArrowRight","ArrowDown","ArrowLeft","ArrowUp"]
+
+function keyHandler(event){
+    key = event.code
+    /*
+    for(i=0; i<4; i++){
+        if(keyMove[i] == key){
+            if(env.timer != TIME_LIMIT && env.validAgentAction(i)){
+                currAction = i
+                tick = 0
+            }
+        }
+    }
+    */
+    for(i=0; i<4; i++){
+        if(keyMove[i] == key){
+            event.preventDefault()
+        }
+    }
+    if(key == "Space"){
+        paused = !paused
+        if(paused){
+            tick = 0
+        }
+    }
+    if(key == "ArrowRight"){
+        while(true){
+            currActionIndex++
+            currAction = actions[currActionIndex-1]
+            updateEnvironment(currActionIndex-1)
+            if(env.actionType == 0){
+                break
+            }
+        }
+    }
+    if(key == "ArrowLeft"){
+        endState = false
+        while(true){
+            currActionIndex--
+            currAction = actions[currActionIndex-1]
+            updateEnvironment(currActionIndex-1)
+            if(env.actionType == 0){
+                break
+            }
+        }
+    }
+    if(key == "ArrowDown"){
+        endState = false
+        currActionIndex = 2
+        currAction = actions[currActionIndex-1]
+        updateEnvironment(currActionIndex-1)
+    }
+    if(key == "ArrowUp"){
+        currActionIndex = actions.length - 15
+        while(true){
+            currActionIndex++
+            currAction = actions[currActionIndex-1]
+            updateEnvironment(currActionIndex-1)
+            if(env.actionType == 0){
+                break
+            }
+        }
+    }
+}
+
+function clickHandler(event){
+    rect = canvas.getBoundingClientRect();
+    x = event.clientX - rect.left;
+    y = event.clientY - rect.top;
+}
+
+function draw(){
+    fillRect(space, 0, 0, windx, windy)
+    fillRect(cLine, marginx - border, marginy - border, boardx*cellS + 2*border, boardy*cellS + 2*border)
+    fillRect(space, marginx, marginy, boardx*cellS, boardy*cellS)
+    for(var i = 0; i < boardx; i++){
+        for(var j = 0; j < boardy; j++){
+            if((i + j) % 2 == 0){
+                fillRect(cShade, marginx + j * cellS, marginy + i * cellS, cellS, cellS)
+            }
+        }
+    }
+    fillCirc(cApple, marginx + env.appley*cellS + cellS/2, marginy + env.applex*cellS + cellS/2, appleSize/2)
+    for(i = 0; i < boardx; i++){
+        for(j = 0; j < boardy; j++){
+            type = env.snake[i][j]
+            if(type != -1){
+                centerx = marginx + j*cellS + cellS/2
+                centery = marginy + i*cellS + cellS/2
+                slideProp = tick / framesPerMove
+                if(i == env.tailx && j == env.taily && (env.headx + dir[currAction][0] != env.applex || env.heady + dir[currAction][1] != env.appley)){
+                    nextx = centerx + dir[type][1] * cellS * slideProp
+                    nexty = centery + dir[type][0] * cellS * slideProp
+                    fillCirc(cSnake, nextx, nexty, snakeWidth / 2)
+                    drawLine(cSnake, nextx, nexty, centerx + dir[type][1] * cellS, centery + dir[type][0] * cellS, snakeWidth)
+                }
+                else{
+                    fillCirc(cSnake, centerx, centery, snakeWidth / 2)
+                    if(type == 4){
+                        nextDir = dir[currAction]
+                        nextx = centerx + nextDir[1] * cellS * (tick / framesPerMove)
+                        nexty = centery + nextDir[0] * cellS * (tick / framesPerMove)
+                        drawLine(cSnake, centerx, centery, nextx, nexty, snakeWidth)
+                        fillCirc(cSnake, nextx, nexty, snakeWidth / 2)
+                    }
+                    else{
+                        drawLine(cSnake, centerx, centery, centerx + dir[type][1] * cellS, centery + dir[type][0] * cellS, snakeWidth)
+                    }
+                }
+            }
+        }
+    }
+    // Draw the X
+    
+    centerx = marginx + env.heady*cellS + cellS/2
+    centery = marginy + env.headx*cellS + cellS/2
+    nextDir = dir[currAction]
+    nextx = centerx + nextDir[1] * cellS * (tick / framesPerMove)
+    nexty = centery + nextDir[0] * cellS * (tick / framesPerMove)
+    drawLine("#fff", nextx - xSize, nexty - xSize, nextx + xSize, nexty + xSize, 3)
+    drawLine("#fff", nextx - xSize, nexty + xSize, nextx + xSize, nexty - xSize, 3)
+
+    fillText("Score: " + env.snakeSize.toString(), cText, textSize, windx/2, marginy/2)
+    fillText("Timer: " + env.timer.toString(), cText, textSize, windx/2, marginy/2 + textSize * 1.5)
+
+
+    fillText("Value", cValue, textSize, marginx/3, textSize)
+    fillText(values[currActionIndex-2].toString(), cText, textSize, marginx*2/3, textSize)
+    fillText("Search Value", cSearch, textSize, marginx/3, textSize*2)
+    fillText(search_values[currActionIndex-2].toString(), cText, textSize, marginx*2/3, textSize*2)
+    fillText("Network Value", cNetwork, textSize, marginx/3, textSize*3)
+    fillText(network_values[currActionIndex-2].toString(), cText, textSize, marginx*2/3, textSize*3)
+
+    valueScale = 20
+    drawLine(cValue, marginx/4, windy/2, marginx/4, windy/2 - values[currActionIndex-2] * valueScale, marginx/4)
+
+    drawLine(cSearch, marginx*2/4, windy/2, marginx*2/4, windy/2 - search_values[currActionIndex-2] * valueScale, marginx/4)
+
+    drawLine(cNetwork, marginx*3/4, windy/2, marginx*3/4, windy/2 - network_values[currActionIndex-2] * valueScale, marginx/4)
+
+    fillText("Search Policy", cPolicy, textSize, windx - marginx/3, textSize);
+    fillText("Network Policy", cNetPolicy, textSize, windx - marginx/3, textSize*2);
+    scale = 150
+    for(d=0; d<4; d++){
+        if(search_policy[currActionIndex-2][d] != -1){
+            x = windx - marginx/2
+            y = windy/2
+            drawLine(cPolicy, x, y, x + dir[d][1] * search_policy[currActionIndex-2][d] * scale, y + dir[d][0] * search_policy[currActionIndex-2][d] * scale, 5)
+        }
+    }
+    for(d=0; d<4; d++){
+        if(search_policy[currActionIndex-2][d] != -1){
+            x = windx - marginx/2
+            y = windy/2
+            drawLine(cNetPolicy, x, y, x + dir[d][1] * network_policy[currActionIndex-2][d] * scale, y + dir[d][0] * network_policy[currActionIndex-2][d] * scale, 2)
+        }
+    }
+}
+
+function update(){
+    if(endState) return
+    //if(gameID == -1) return
+    draw()
+    if(!paused){
+        tick++
+    }
+    if(tick >= framesPerMove){
+        tick = 0
+
+        env.agentAction(currAction)
+        if(env.actionType == 1){
+            env.chanceAction(actions[currActionIndex])
+            currActionIndex++
+        }
+        if(env.timer == TIME_LIMIT){
+            endState = true
+            return
+        }
+
+        // Check if there is only one valid action
+        numValidActions = 0
+        validAction = -1
+        for(i = 0; i < 4; i++){
+            if(env.validAgentAction(i)){
+                numValidActions++
+                validAction = i
+            }
+        }
+        if(numValidActions == 0){
+            endState = true
+            return
+        }
+        if(numValidActions == 1){
+            currAction = validAction
+        }
+        else{
+            currAction = actions[currActionIndex]
+            currActionIndex++
+        }
+    }
+}
+
+function updateManual(){
+    draw()
+    if(tick == -1){
+        
+    }
+    else if(tick < framesPerMove){
+        tick++
+    }
+    else{
+        env.agentAction(currAction)
+        tick = -1
+        if(env.actionType == 1){
+            env.randomChanceAction()
+        }
+    }
+}
+
+var ONE_FRAME_TIME = 1000 / 60 ;
+var mainloop = function() {
+    update()
+    //updateManual()
+};
+setInterval( mainloop, ONE_FRAME_TIME );
+
+</script>
+
+</body>
+
+</html>
