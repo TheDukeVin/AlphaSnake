@@ -123,4 +123,4 @@ srun --pty -p test --mem 100 -t 0-01:00 /bin/bash
 
 Compiling with optimizations
 
-g++ -O2 -std=c++11 -pthread main.cpp data.cpp convNet.cpp environment.cpp InputLayerCode.cpp trainer.cpp
+g++ -std=c++11 -pthread main.cpp data.cpp convNet.cpp environment.cpp InputLayerCode.cpp trainer.cpp

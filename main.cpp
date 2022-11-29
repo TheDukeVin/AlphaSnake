@@ -77,6 +77,7 @@ void testNet(){
             sum2 += net.policyExpected[i];
         }
     }
+    assert(abs(sum2 - 1) < 0.0001);
     
     net.pass(PASS_FULL);
     
@@ -87,7 +88,7 @@ void testNet(){
         }
     }
     net.backProp(PASS_FULL);
-    double ep = 0.000001;
+    double ep = 0.00001;
     
     for(int l=0; l<net.numLayers; l++){
         for(int i=0; i<net.layers[l]->numParams; i++){
@@ -100,8 +101,9 @@ void testNet(){
                     new_error -= net.policyExpected[j] * log(net.policyOutput[j]);
                 }
             }
-            //cout<< ((new_error - base) / ep) << ' ' << net.layers[l]->Dparams[i]<<'\n';
-            assert( abs((new_error - base) / ep - net.layers[l]->Dparams[i]) < 0.0001);
+            cout<< ((new_error - base) / ep) << ' ' << net.layers[l]->Dparams[i]<<'\n';
+            assert( abs((new_error - base) / ep - net.layers[l]->Dparams[i]) < 0.01);
+            return;
         }
     }
 }
@@ -231,6 +233,11 @@ void trainCycle(){
                     controlOut<<"Queue set to "<<dq.currSize<<'\n';
                     controlOut<<"Exploration constant set to "<<explorationConstant<<'\n';
                 }
+                /*
+                if(sum / evalPeriod > 99){
+                    dq.learnRate = min(0.0001, dq.learnRate);
+                    controlOut<<"Learning rate set to "<<dq.learnRate<<'\n';
+                }*/
                 controlOut.close();
 
                 sum = 0;
@@ -355,12 +362,12 @@ int main()
     srand((unsigned)time(NULL));
     start_time = time(NULL);
     
-    /*
-    for(int i=0; i<10; i++){
-        testNet();
-    }*/
     
-    trainCycle();
+    for(int i=0; i<1; i++){
+        testNet();
+    }
+    
+    //trainCycle();
     
     //evaluate();
     

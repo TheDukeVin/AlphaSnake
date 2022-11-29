@@ -27,11 +27,11 @@ double min(double x, double y){
     return y;
 }
 
-
+/*
 double abs(double x){
     if(x < 0) return -x;
     return x;
-}
+}*/
 
 double randWeight(double startingParameterRange){
     return (((double)rand() / RAND_MAX)*2-1) * startingParameterRange;

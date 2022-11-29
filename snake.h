@@ -69,7 +69,7 @@ int max(int x, int y);
 
 double min(double x, double y);
 
-double abs(double x);
+//double abs(double x);
 
 // For the network
 double randWeight(double startingParameterRange);
