@@ -59,7 +59,7 @@ using namespace std;
 
 // Multithreading
 
-#define NUM_THREADS 50
+#define NUM_THREADS 4
 
 const string outAddress = "snake_conv.txt";
 
@@ -382,6 +382,7 @@ public:
 
     int output_gameLength;
     Data* output_game;
+    string output_log;
     
     string gameLog;
     string valueLog;

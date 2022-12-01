@@ -127,15 +127,17 @@ void trainCycle(){
     cout<<"Beginning training: "<<time(NULL)<<'\n';
     Agent a;
     standardSetup(a);
+
+    cout<<"Reading net:\n";
+    a.readNet("snakeConv.in");
+    cout<<"Net successfully inported\n";
+
     for(int i=0; i<NUM_THREADS; i++){
         trainers[i] = new Trainer();
         standardSetup(trainers[i]->a);
         //running[i] = 0;
         //threads[i] = new thread(runThread, i, trainers[i]);
     }
-
-    //cout<<"Reading net:\n";
-    //t.a.readNet("snakeConv.in");
 
     const int storePeriod = 1000;
     
@@ -170,9 +172,6 @@ void trainCycle(){
     //t.valueLog = valueLog;
     
     for(int i=1; i<=numGames; ){
-        ofstream valueOut(valueLog, ios::app);
-        valueOut<<"Game "<<i<<' '<<time(NULL)<<'\n';
-        valueOut.close();
 
         for(int j=0; j<NUM_THREADS; j++){
             //lock_guard<mutex> lk(m[j]);
@@ -187,6 +186,10 @@ void trainCycle(){
             //while(running[j] == 1) cv[j].wait(lk);
             threads[j]->join();
             dq.enqueue(trainers[j]->output_game, trainers[j]->output_gameLength);
+            ofstream valueOut(valueLog, ios::app);
+            valueOut<<"Game "<<i<<' '<<time(NULL)<<'\n';
+            valueOut<<trainers[j]->output_log;
+            valueOut.close();
         }
 
         for(int j=0; j<NUM_THREADS; j++){
@@ -248,7 +251,8 @@ void trainCycle(){
                 a.save("nets/Game" + to_string(i) + ".out");
             }
             
-            dq.trainAgent(a);
+            // TRAINING CAN BE SWITCHED OFF HERE.
+            //dq.trainAgent(a);
             i++;
         }
     }
@@ -362,12 +366,12 @@ int main()
     srand((unsigned)time(NULL));
     start_time = time(NULL);
     
-    
+    /*
     for(int i=0; i<1; i++){
         testNet();
-    }
+    }*/
     
-    //trainCycle();
+    trainCycle();
     
     //evaluate();
     

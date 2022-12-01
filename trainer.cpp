@@ -86,8 +86,11 @@ void Trainer::trainTree(){
     
     roots[0].initialize();
     rootIndex = 0;
+
     //ofstream fout(valueLog, ios::app);
     //fout<<(roots[0].applex * boardy + roots[0].appley)<<' ';
+    output_log = to_string(roots[0].applex * boardy + roots[0].appley) + ' ';
+
     initializeNode(roots[0], 0);
     index = 1;
     
@@ -123,11 +126,13 @@ void Trainer::trainTree(){
         roots[rootState+1].setAction(&roots[rootState], chosenAction);
         rootIndex = outcomes[rootIndex][chosenAction];
         //fout<<chosenAction<<' ';
+        output_log += to_string(chosenAction) + ' ';
         if(roots[rootState+1].isEndState()){
             break;
         }
     }
     //fout<<"\n";
+    output_log += '\n';
 
     int numStates = rootState + 2;
     Data* game = new Data[numStates];
@@ -147,41 +152,51 @@ void Trainer::trainTree(){
     //dq->enqueue(game, numStates);
     output_gameLength = numStates;
     output_game = game;
-/*
+
     for(int i=0; i<numStates; i++){
-        fout<<game[i].expectedValue<<' ';
+        //fout<<game[i].expectedValue<<' ';
+        output_log += to_string(game[i].expectedValue) + ' ';
     }
-    fout<<"\n";
+    //fout<<"\n";
+    output_log += '\n';
     
     for(int i=0; i<numStates; i++){
-        fout<<values[rootIndices[i]]<<' ';
+        //fout<<values[rootIndices[i]]<<' ';
+        output_log += to_string(values[rootIndices[i]]) + ' ';
     }
-    fout<<"\n";
+    //fout<<"\n";
+    output_log += '\n';
     
     search_values[numStates - 1] = game[numStates - 1].e.getReward();
     for(int i=0; i<numStates; i++){
-        fout<<search_values[i];
-        if(i != numStates-1) fout<<' ';
+        //fout<<search_values[i];
+        output_log += to_string(search_values[i]) + ' ';
+        //if(i != numStates-1) fout<<' ';
     }
-    fout<<"\n";
+    //fout<<"\n";
+    output_log += '\n';
     
     for(int i=0; i<numStates; i++){
         for(int j=0; j<numAgentActions; j++){
-            fout<<policy[rootIndices[i]][j]<<' ';
+            //fout<<policy[rootIndices[i]][j]<<' ';
+            output_log += to_string(policy[rootIndices[i]][j]) + ' ';
         }
     }
-    fout<<"\n";
+    //fout<<"\n";
+    output_log += '\n';
     
     for(int i=0; i<numStates; i++){
         for(int j=0; j<numAgentActions; j++){
-            fout<<search_policies[i][j]<<' ';
+            //fout<<search_policies[i][j]<<' ';
+            output_log += to_string(search_policies[i][j]) + ' ';
         }
     }
-    fout<<"\n";
+    //fout<<"\n";
+    output_log += '\n';
 
-    fout.close();
+    //fout.close();
 
-    return &roots[numStates-1];*/
+    //return &roots[numStates-1];
 }
 
 void Trainer::expandPath(){
