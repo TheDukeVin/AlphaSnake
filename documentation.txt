@@ -117,10 +117,22 @@ rsync -r some_folder username@host:./folder
 
 To request a cluster node, use 
 
-srun --pty -p test --mem 100 -t 0-01:00 /bin/bash
+srun --pty -p serial_requeue --mem 100000 -t 0-48:00 /bin/bash
 
 10/12/22
 
 Compiling with optimizations
 
 g++ -O2 -std=c++11 -pthread main.cpp data.cpp convNet.cpp environment.cpp InputLayerCode.cpp trainer.cpp
+
+12/10/22
+
+FASRC sometimes has much slower performance when increasing the time limit.
+
+Copying:
+rsync -r kevindu@login.rc.fas.harvard.edu:./MultiagentSnake/alpha_snake .
+rsync -r alpha_snake kevindu@login.rc.fas.harvard.edu:./MultiagentSnake
+
+Job info:
+sacct --format=JobID,JobName,ReqMem,MaxRSS,Elapsed
+20x20 2400 time steps, 3000 games = 10G

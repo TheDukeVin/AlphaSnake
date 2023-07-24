@@ -22,19 +22,36 @@ int running[NUM_THREADS]; // 0 = not running. 1 = running. -1 = halt.
 unsigned long start_time;
 
 void standardSetup(Agent& net){
-    net.commonBranch.initEnvironmentInput(10, 10, 10, 3, 3);
-    net.commonBranch.addConvLayer(10, 10, 10, 3, 3);
-    net.commonBranch.addPoolLayer(10, 5, 5);
+    net.commonBranch.initEnvironmentInput(15, 20, 20, 3, 3);
+    net.commonBranch.addPoolLayer(15, 10, 10);
+    net.commonBranch.addConvLayer(15, 10, 10, 3, 3);
+    net.commonBranch.addConvLayer(20, 10, 10, 3, 3);
+    net.commonBranch.addPoolLayer(20, 5, 5);
     net.setupCommonBranch();
+    net.policyBranch.addFullyConnectedLayer(300);
     net.policyBranch.addFullyConnectedLayer(200);
-    net.policyBranch.addFullyConnectedLayer(100);
     net.policyBranch.addOutputLayer(4);
+    net.valueBranch.addFullyConnectedLayer(300);
     net.valueBranch.addFullyConnectedLayer(200);
-    net.valueBranch.addFullyConnectedLayer(100);
     net.valueBranch.addOutputLayer(1);
     net.setup();
     net.randomize(0.2);
 }
+
+// void standardSetup(Agent& net){
+//     net.commonBranch.initEnvironmentInput(10, 10, 10, 3, 3);
+//     net.commonBranch.addConvLayer(10, 10, 10, 3, 3);
+//     net.commonBranch.addPoolLayer(10, 5, 5);
+//     net.setupCommonBranch();
+//     net.policyBranch.addFullyConnectedLayer(200);
+//     net.policyBranch.addFullyConnectedLayer(100);
+//     net.policyBranch.addOutputLayer(4);
+//     net.valueBranch.addFullyConnectedLayer(200);
+//     net.valueBranch.addFullyConnectedLayer(100);
+//     net.valueBranch.addOutputLayer(1);
+//     net.setup();
+//     net.randomize(0.2);
+// }
 
 void printArray(double* A, int size){
     for(int i=0; i<size; i++){
@@ -128,9 +145,9 @@ void trainCycle(){
     Agent a;
     standardSetup(a);
 
-    cout<<"Reading net:\n";
-    a.readNet("snakeConv.in");
-    cout<<"Net successfully inported\n";
+    // cout<<"Reading net:\n";
+    // a.readNet("snakeConv.in");
+    // cout<<"Net successfully inported\n";
 
     for(int i=0; i<NUM_THREADS; i++){
         trainers[i] = new Trainer();
@@ -144,7 +161,7 @@ void trainCycle(){
     dq.index = 0;
     dq.currSize = 500;
     dq.momentum = 0.7;
-    dq.learnRate = 0.001;
+    dq.learnRate = 0.0001;
     double explorationConstant = 0.5;
     //t.actionTemperature = 2;
     
@@ -224,14 +241,14 @@ void trainCycle(){
                 }
                 controlOut<<" TIMESTAMP: "<<(time(NULL) - start_time)<<'\n';
 
-                if(sum / evalPeriod > 80){
+                if(sum / evalPeriod > 100){
                     dq.currSize = max(2000, dq.currSize);
                     explorationConstant = min(0.4, explorationConstant);
                     controlOut<<"Queue set to "<<dq.currSize<<'\n';
                     controlOut<<"Exploration constant set to "<<explorationConstant<<'\n';
                 }
-                if(sum / evalPeriod > 95){
-                    dq.currSize = max(10000, dq.currSize);
+                if(sum / evalPeriod > 200){
+                    dq.currSize = max(6000, dq.currSize);
                     explorationConstant = min(0.3, explorationConstant);
                     controlOut<<"Queue set to "<<dq.currSize<<'\n';
                     controlOut<<"Exploration constant set to "<<explorationConstant<<'\n';
@@ -252,7 +269,7 @@ void trainCycle(){
             }
             
             // TRAINING CAN BE SWITCHED OFF HERE.
-            //dq.trainAgent(a);
+            dq.trainAgent(a);
             i++;
         }
     }

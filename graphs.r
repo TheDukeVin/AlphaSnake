@@ -2,7 +2,7 @@ library(graphics)
 library(grid)
 library(ggplot2)
 
-data <- read.delim("/Users/kevindu/Desktop/Employment/multiagent_snake/multiagent_snake/features.txt", sep='\t', header = FALSE)
+data <- read.delim("/Users/kevindu/Desktop/Employment/Multiagent Snake Research/multiagent_snake/features.txt", sep='\t', header = FALSE)
 
 nums <- data[1,]
 
@@ -86,7 +86,7 @@ grey = rgb(200, 200, 200, max = 255, alpha = 125)
 plot_with_error(nums, c(50,100), "Average Score", "red", pink)
 lines(c(0, N), c(59.09, 59.09), col="black", lty=2)
 lines(c(0, N), c(100, 100), col="gray30", lty=3)
-legend(2500, 85, legend=c("AlphaZero", "Naive tree search", "Maximum score"),
+legend(2300, 85, legend=c("AlphaZero", "Naive tree search", "Maximum score"),
        col=c("red", "black", "gray30"), lty=1:3, cex=0.8)
 
 plot_with_error(nums == 100, c(0,1), "Win Rate", "blue", light_blue)

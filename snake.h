@@ -25,9 +25,9 @@ using namespace std;
 
 //environment details
 
-#define boardx 10
-#define boardy 10
-#define maxTime 1200
+#define boardx 20
+#define boardy 20
+#define maxTime 4800
 
 #define numAgentActions 4
 #define numChanceActions (boardx*boardy)
@@ -37,10 +37,10 @@ using namespace std;
 
 #define maxNorm 100
 #define batchSize 100
-#define numBatches 30
+#define numBatches 120
 
 //#define scoreNorm 10
-#define queueSize 10000
+#define queueSize 6000
 
 #define numGames 25000
 #define numPaths 200
@@ -50,7 +50,7 @@ using namespace std;
 #define numEvalGames 100
 #define evalZscore 2
 
-#define discountFactor 0.98
+#define discountFactor 0.99
 
 // Passing Value or Full
 
@@ -59,7 +59,7 @@ using namespace std;
 
 // Multithreading
 
-#define NUM_THREADS 4
+#define NUM_THREADS 50
 
 const string outAddress = "snake_conv.txt";
 
@@ -69,7 +69,7 @@ int max(int x, int y);
 
 double min(double x, double y);
 
-//double abs(double x);
+double abs(double x);
 
 // For the network
 double randWeight(double startingParameterRange);
